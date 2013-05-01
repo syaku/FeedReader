@@ -1,0 +1,84 @@
+!!! 5
+html
+  head
+    meta(charset="utf-8")
+    title FeedReader
+    link(rel="stylesheet", href="/css/bootstrap.css")
+    link(rel="stylesheet", href="/css/bootstrap-responsive.css")
+    script(src="/zappa/jquery.js")
+    script(src="/zappa/sammy.js")
+    script(src="/socket.io/socket.io.js")  
+    script(src="/zappa/zappa.js")
+    script(src="/js/bootstrap.js")
+    script(src="/js/knockout.js")
+    script(src="/js/main.js")
+    base(target="_blank")
+    style
+      body{
+        font-family:'ヒラギノ角ゴ Pro W3','Hiragino Kaku Gothic Pro','メイリオ',Meiryo,'ＭＳ Ｐゴシック',sans-serif;
+      }
+  body
+    .navbar.navbar-fixed-top
+      .navbar-inner
+        .container
+          a.brand(href="#/") FeedReader
+          ul.nav(data-bind="template: {name: user.displayName() ? 'top_menu':'top_menu_no_auth'}")
+          
+    .container(style="margin-top:60px;")
+      .row
+        .span3
+          #sidenav(data-bind="template: {name: user.displayName() ? 'side_menu' : 'side_menu_no_auth'}", style="width:270px;")
+        .span9
+          .content
+            .accordion#articles(data-bind="template:{name: 'article', foreach: items}")  
+
+    // Modal dialogs.
+
+    form.modal.hide.fade#add-feed
+      .modal-header
+        button.close(type="button", data-dismiss="modal", aria-hidden="true") &times;
+        h3 フィードの追加
+      .modal-body
+          input.input-block-level#add-feed-url(type="text", data-bind="value: new_feed.url", placeholder="URL")
+      .modal-footer
+        a.btn(href="#", data-dismiss="modal", aria-hidden="true") Cancel
+        button.btn.btn-primary#add-feed-submit(data-bind="click:addFeed") Add
+
+    // Knockout.js template.
+
+    script#top_menu(type="text/html")
+      li
+        a(href="#add-feed", data-toggle="modal") Add
+      li
+        a(href="/auth/logout", target="_self") Logout
+
+    script#top_menu_no_auth(type="text/html")
+      li
+        a(href="/auth/google", target="_self") Login
+
+    script#side_menu_no_auth(type="text/html")
+      .sidenav-inner
+
+    script#side_menu(type="text/html")
+      .sidenav-inner
+        ul.nav.nav-list.well
+          li.nav-header MENU
+          li
+            a(href="#/", target="_self") ホーム
+          li.nav-header FEEDS
+          // ko foreach: user.feeds()
+          li
+            a(data-bind="attr:{href:'#/feed/'+site}, text:title", target="_self", style="text-overflow: ellipsis;overflow:hidden;white-space:nowrap;")
+          // /ko
+
+    script#article(type="text/html")
+      .accordion-group(data-bind="attr:{id: _id}, style: {backgroundColor: read() ? '#eee' : 'white'}")
+        .accordion-heading
+          a.accordion-toggle(href="#", data-bind="click: $parent.selectArticle, text: meta.title + ' - ' + title")
+        .accordion-body.collapse.in(data-bind="if: selected()", style="background-color:white;")
+          .accordion-inner
+            hgroup
+              h4
+                a(data-bind="attr:{href: link}, text: title")
+              p(data-bind="text: date")
+            article(data-bind="html: description")

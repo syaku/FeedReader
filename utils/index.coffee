@@ -1,0 +1,2 @@
+@include = ->
+  @include 'utils/feed'
