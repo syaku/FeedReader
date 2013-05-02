@@ -68,7 +68,7 @@ html
           li.nav-header FEEDS
           // ko foreach: user.feeds()
           li
-            a(data-bind="attr:{href:'#/feed/'+site}, text:title", target="_self", style="text-overflow: ellipsis;overflow:hidden;white-space:nowrap;")
+            a(data-bind="attr:{href:'#/feed/'+encodeURIComponent(_id)}, text:title", target="_self", style="text-overflow: ellipsis;overflow:hidden;white-space:nowrap;")
           // /ko
 
     script#article(type="text/html")

@@ -1,21 +1,4 @@
 @include = ->
-  Schema = @mongoose.Schema
-  ObjectId = Schema.ObjectId
-
-  UserFeedSchema = new Schema(
-    site: {type:ObjectId, required:true}
-    title: {type:String, required:true}
-  )
-
-  UserSchema = new Schema(
-    identifier: {type: String, unique: true}
-    displayName: String
-    feeds: [UserFeedSchema]
-  )
-
-  @models = @models||{}
-  @models.Users = @mongoose.model('Users', UserSchema)
-  @models.UserFeeds = @mongoose.model('UserFeeds', UserFeedSchema)
   models = @models
 
   @get "/users", @myAuth, ->

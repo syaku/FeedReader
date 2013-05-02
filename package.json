@@ -19,7 +19,8 @@
     "jade": "~0.30.0",
     "underscore": "~1.4.4",
     "config": "~0.4.24",
-    "coffee-script": "~1.6.2"
+    "coffee-script": "~1.6.2",
+    "mongoose-types": "~1.0.3"
   },
   "devDependencies": {},
   "scripts": {

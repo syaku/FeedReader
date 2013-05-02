@@ -1,21 +1,6 @@
-FeedParser = require 'feedparser'
-request = require 'request'
-
 @include = ->
   utils = @utils
   
-  mongoose = @mongoose
-  Schema = @mongoose.Schema
-  ObjectId = Schema.ObjectId
-
-  SiteSchema = new Schema
-    title: String
-    url: {type:String, required: true, unique:true}
-
-  Sites = @mongoose.model('Site', SiteSchema)
-  @models = @models||{}
-  @models.Sites = Sites
-
   models = @models
 
   @get "/sites", @myAuth, ->
@@ -29,27 +14,27 @@ request = require 'request'
       @res.send 401
 
   @post "/sites", @myAuth, ->
-    Sites.findOne({url:@req.param('url')}).exec (err, site)=>
+    console.log @req.param('url')
+    models.Feeds.findById @req.param('url'), (err, feed)=>
       if err
         @next err
       else
         ((callback)=>
-          if site
-            callback({title: site.title, site: site._id})
+          if feed
+            callback(feed)
           else
-            site = new Sites({title: "no title.", url:@req.param('url')})
-            utils.FeedUtils.get_articles(site, (err, articles, site)=>
+            feed = new models.Feeds({title: "no title.", _id: @req.param('url')})
+            utils.FeedUtils.get_articles(feed, (err, articles, feed)=>
               if err
                 @next err
               else
-                site.save (err)=>
+                feed.save (err)=>
                   if err
                     @next(err)
                   else
-                    Articles = mongoose.model('Article')
                     for item in articles
-                      article = new Articles()
-                      article.site = site._id
+                      article = new models.Articles()
+                      article.feedUrl = feed._id
                       article.meta = {}
                       article.meta.title = item.meta.title
                       article.meta.link = item.meta.link
@@ -63,13 +48,13 @@ request = require 'request'
                       else
                         article.date = item.meta.date
                       article.save()
-                    callback({title: site.title, site: site._id})
+                    callback(feed)
             )
           )((new_feed)=>
             models.Users.findOne({identifier: @req.user.identifier}).exec (err, user)=>
-              feed = new models.UserFeeds()
+              feed = new models.Feeds()
               feed.title = new_feed.title
-              feed.site = new_feed.site
+              feed._id = new_feed._id
               user.feeds.push feed
               user.save (err)=>
                 if err
@@ -78,12 +63,12 @@ request = require 'request'
                   @json new_feed
          )
 
-  @get "/sites/:site", @myAuth, ->
-    Sites.findById @req.param("site"), (err, site)=>
+  @get "/sites/:feed", @myAuth, ->
+    models.Feeds.findById @req.param("feed"), (err, feed)=>
       if err
         @next err
       else
-        if site?
-          @json(site)
+        if feed?
+          @json(feed)
         else
           @send(404)

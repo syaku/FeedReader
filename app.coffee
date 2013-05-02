@@ -66,26 +66,24 @@ require('zappajs').run config.env.port, config.env.host, ->
     @render index:{}
     
   # 30分ごとに監視
-  cronTime = "*/5 * * * *"
+  cronTime = "*/30 * * * *"
   
   job = new CronJob(
     cronTime: cronTime
     onTick: =>
-      Articles = @mongoose.model('Article')
-      Sites = @mongoose.model('Site')
-      Sites.find({}, (err, sites)=>
+      @models.Feeds.find({}, (err, feeds)=>
         if err
           console.log err
           return
-        for site in sites
-          do (site)=>
-            @utils.FeedUtils.get_articles site, (err, articles)=>
+        for feed in feeds
+          do (feed)=>
+            @utils.FeedUtils.get_articles feed, (err, articles)=>
               if err
                 console.log err
                 return
               for item in articles
-                article = new Articles()
-                article.site = site._id
+                article = new @models.Articles()
+                article.feedUrl = feed._id
                 article.meta = {}
                 article.meta.title = item.meta.title
                 article.meta.link = item.meta.link
