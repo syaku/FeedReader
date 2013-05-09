@@ -10,6 +10,7 @@ html
     script(src="/socket.io/socket.io.js")  
     script(src="/zappa/zappa.js")
     script(src="/js/bootstrap.js")
+    script(src="/js/bootstrap-contextmenu.js")
     script(src="/js/knockout.js")
     script(src="/js/main.js")
     base(target="_blank")
@@ -30,7 +31,7 @@ html
           #sidenav(data-bind="template: {name: user.displayName() ? 'side_menu' : 'side_menu_no_auth'}", style="width:270px;")
         .span9
           .content
-            .accordion#articles(data-bind="template:{name: 'article', foreach: items}")  
+            .accordion#articles(data-bind="template:{name: 'article', foreach: items}") 
 
     // Modal dialogs.
 
@@ -68,7 +69,12 @@ html
           li.nav-header FEEDS
           // ko foreach: user.feeds()
           li
-            a(data-bind="attr:{href:'#/feed/'+encodeURIComponent(_id)}, text:title", target="_self", style="text-overflow: ellipsis;overflow:hidden;white-space:nowrap;")
+            a(data-toggle="context", data-bind="attr:{'data-target': '#context-menu'+$index(), href:'#/feed/'+encodeURIComponent(_id)}, text:title", target="_self", style="text-overflow: ellipsis;overflow:hidden;white-space:nowrap;")
+          // Context menu.
+          div.feed-context-menu(data-bind="attr:{id:'context-menu'+$index()}")
+            ul.dropdown-menu(role="menu")
+              li
+                a(data-bind="click:$parent.user.deleteFeed") Delete
           // /ko
 
     script#article(type="text/html")

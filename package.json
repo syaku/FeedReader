@@ -20,7 +20,8 @@
     "underscore": "~1.4.4",
     "config": "~0.4.24",
     "coffee-script": "~1.6.2",
-    "mongoose-types": "~1.0.3"
+    "mongoose-types": "~1.0.3",
+    "log4js": "~0.6.3"
   },
   "devDependencies": {},
   "scripts": {

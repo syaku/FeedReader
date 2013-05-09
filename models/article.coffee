@@ -3,7 +3,7 @@ _ = require 'underscore'
 @include = ->
   models = @models
 
-  @get '/articles', @myAuth,  ->
+  @get '/articles', @myAuth, ->
     if @req.param('site')
       feeds = [@req.param('site')]
       models.Articles.findByFeeds feeds, (err, articles)=>
@@ -15,7 +15,6 @@ _ = require 'underscore'
       models.Users.findOne({identifier: @req.user.identifier}).exec (err, user)=>
         feeds = _.map user.feeds, (item)->
           item._id
-        console.log feeds
         models.Articles.findByFeeds feeds, (err, articles)=>
           if err
             @next err

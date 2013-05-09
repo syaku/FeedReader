@@ -6,15 +6,23 @@
       @user = {
         displayName: ko.observable(null)
         feeds: ko.observableArray([])
+        deleteFeed: (data, event)->
+          $.ajax {type: 'DELETE', url: "/sites/#{encodeURIComponent(data._id)}", dataType: 'json', success: (user, status)=>
+            console.log status
+            feeds = self.user.feeds()
+            for feed, index in feeds
+              if feed._id == data._id
+                feeds.splice(index, 1)
+                self.user.feeds(feeds)
+                return
+          }
       }
       @items = ko.observableArray(null)
         
       $.ajax {type: 'GET', url: '/users', dataType: 'json', success: ((user, status)=>
        self.user.displayName(user.displayName)
        self.user.feeds(user.feeds)
-       console.log user.feeds
       ),error: ((req, status, err)=>
-        console.log req.status
       )}
 
       @new_feed =

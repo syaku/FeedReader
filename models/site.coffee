@@ -63,6 +63,15 @@
                   @json new_feed
          )
 
+  @del "/sites/:feed", @myAuth, ->
+    models.Users.findOne {identifier: @req.user.identifier}, (err, user)=>
+      user.feeds.id(@req.param("feed")).remove()
+      user.save (err)=>
+        if err 
+          @next err
+        else
+          @json user
+
   @get "/sites/:feed", @myAuth, ->
     models.Feeds.findById @req.param("feed"), (err, feed)=>
       if err

@@ -1,4 +1,6 @@
 config = require 'config'
+log4js = require 'log4js'
+logger = log4js.getLogger()
 
 require('zappajs').run config.env.port, config.env.host, ->
   {CronJob} = require 'cron'
@@ -6,7 +8,7 @@ require('zappajs').run config.env.port, config.env.host, ->
   @mongoose.connect 'mongodb://localhost/reader'
 
   passport = require 'passport'
-  GoogleStrategy = require('passport-google').Strategy;
+  GoogleStrategy = require('passport-google').Strategy
 
   passport.serializeUser (user, done)->
     done null, user
@@ -46,6 +48,7 @@ require('zappajs').run config.env.port, config.env.host, ->
       @res.send 401
  
   @configure =>
+    @use log4js.connectLogger(logger, {level:log4js.levels.INFO})
     @use 'methodOverride', 'bodyParser', 'cookieParser', session: {secret: 'foo'}, passport.initialize(), passport.session(), 'static'
     @set 'view engine': 'jade', views: "#{__dirname}/views"
 
@@ -66,23 +69,24 @@ require('zappajs').run config.env.port, config.env.host, ->
     @render index:{}
     
   # 30分ごとに監視
-  cronTime = "*/30 * * * *"
+  cronTime = "*/5 * * * *"
   
   job = new CronJob(
     cronTime: cronTime
     onTick: =>
       @models.Feeds.find({}, (err, feeds)=>
         if err
-          console.log err
+          logger.error err
           return
         for feed in feeds
           do (feed)=>
             @utils.FeedUtils.get_articles feed, (err, articles)=>
               if err
-                console.log err
+                logger.error err
                 return
               for item in articles
-                article = new @models.Articles()
+                article = new @models.Articles(item)
+                logger.debug = article
                 article.feedUrl = feed._id
                 article.meta = {}
                 article.meta.title = item.meta.title
@@ -98,9 +102,9 @@ require('zappajs').run config.env.port, config.env.host, ->
                   article.date = item.meta.date
                 article.save()
       )
-      console.log 'tick'
+      logger.info 'tick'
     onComplete: ->
-      console.log "complete"
+      logger.info "complete"
     start: false
     timeZone: "Japan/Tokyo"
   )
