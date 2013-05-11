@@ -2,23 +2,23 @@ config = require 'config'
 log4js = require 'log4js'
 logger = log4js.getLogger()
 
-require('zappajs').run config.env.port, config.env.host, ->
+require('zappajs').run config.env.port, ->
   {CronJob} = require 'cron'
   @mongoose = require 'mongoose'
   @mongoose.connect 'mongodb://localhost/reader'
 
-  passport = require 'passport'
+  @passport = require 'passport'
   GoogleStrategy = require('passport-google').Strategy
 
-  passport.serializeUser (user, done)->
+  @passport.serializeUser (user, done)->
     done null, user
 
-  passport.deserializeUser (obj, done)->
+  @passport.deserializeUser (obj, done)->
     done null, obj
 
-  passport.use new GoogleStrategy({
-      returnURL: "http://#{config.env.host}:#{config.env.port}/auth/google/return"
-      realm: "http://#{config.env.host}:#{config.env.port}/"
+  @passport.use new GoogleStrategy({
+      returnURL: "http://#{config.env.host}/auth/google/return"
+      realm: "http://#{config.env.host}/"
     },
     (identifier, profile, done)=>
       @models.Users.findOne {identifier: identifier}, (err, user)=>
@@ -49,24 +49,14 @@ require('zappajs').run config.env.port, config.env.host, ->
  
   @configure =>
     @use log4js.connectLogger(logger, {level:log4js.levels.INFO})
-    @use 'methodOverride', 'bodyParser', 'cookieParser', session: {secret: 'foo'}, passport.initialize(), passport.session(), 'static'
+    @use 'methodOverride', 'bodyParser', 'cookieParser', session: {secret: 'foo'}, @passport.initialize(), @passport.session(), 'static'
     @set 'view engine': 'jade', views: "#{__dirname}/views"
 
   @include "utils"
   @include "models"
-  @include "client"
+  @include 'routes'
+  @include 'client'
 
-  @get '/auth/google': passport.authenticate('google')
-
-  @get '/auth/google/return', passport.authenticate('google', failureRedirect: '/'), ->
-    @res.redirect '/'
-
-  @get '/auth/logout':->
-    @req.logout()
-    @res.redirect '/'
-
-  @get '/': ->
-    @render index:{}
     
   # 30分ごとに監視
   cronTime = "*/5 * * * *"

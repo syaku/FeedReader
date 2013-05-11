@@ -1,4 +1,4 @@
 module.exports = 
   env:
-    host: 'localhost'
+    host: 'localhost:3000'
     port: 3000

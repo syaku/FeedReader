@@ -1,46 +1,48 @@
 @include = ->
   @client "/js/main.js":->
-    FeedReader = ()->
-      self = this
-
-      @user = {
-        displayName: ko.observable(null)
-        feeds: ko.observableArray([])
-        deleteFeed: (data, event)->
-          $.ajax {type: 'DELETE', url: "/sites/#{encodeURIComponent(data._id)}", dataType: 'json', success: (user, status)=>
-            console.log status
-            feeds = self.user.feeds()
-            for feed, index in feeds
-              if feed._id == data._id
-                feeds.splice(index, 1)
-                self.user.feeds(feeds)
-                return
-          }
-      }
-      @items = ko.observableArray(null)
+    class FeedReader
+      constructor: ->
+        @user = {
+          displayName: ko.observable(null)
+          feeds: {}
+          feedKeys: ko.observableArray()
+          deleteFeed: (data, event)=>
+            $.ajax {type: 'DELETE', url: "/feeds/#{encodeURIComponent(data)}", dataType: 'json', success: (user, status)=>
+              keys = @user.feedKeys()
+              index = $.inArray(data, keys)
+              @user.feedKeys.splice(index, 1)
+            }
+        }
         
-      $.ajax {type: 'GET', url: '/users', dataType: 'json', success: ((user, status)=>
-       self.user.displayName(user.displayName)
-       self.user.feeds(user.feeds)
-      ),error: ((req, status, err)=>
-      )}
+        @selectedArticle = null
+        @articleKeys = ko.observableArray()
+        @articles = {}
 
-      @new_feed =
-        url: ko.observable('')
-        title: ko.observable('')
+        @new_feed =
+          url: ko.observable('')
+          title: ko.observable('')
+        
+        $.ajax {type: 'GET', url: '/users', dataType: 'json', success: ((user, status)=>
+          @user.displayName(user.displayName)
+          for feed in user.feeds
+            @user.feeds[feed._id] = feed
+            @user.feedKeys.push feed._id
 
-      @addFeed = =>
+        ),error: (req, status, err)=>
+        }
+      
+      addFeed: =>
         data =
           url: @new_feed.url()
           title: @new_feed.title()
-
-        $.post '/sites', data, (result, status)=>
+        $.post '/feeds', data, (result, status)=>
           @user.feeds.push result
-        
         $('#add-feed').modal('hide')
 
-      @selectFeed = (id)->
-        $.getJSON '/articles', {site:id}, (articles)->
+      selectFeed: (id, event)->
+        $.getJSON '/articles', {site:id}, (articles)=>
+          @articleKeys([])
+          @selectedArticle = null
           for article in articles
             article.date = new Date(article.date)
             article.selected = ko.observable(false)
@@ -49,52 +51,51 @@
                 this.read(true)
             ), article
             article.read = ko.observable(false)
-          self.items(articles)
-      
-      @selectArticle = (article)-> 
-        for item in self.items()
-          if item._id == article._id
-            article.selected(!article.selected())
-          else
-            item.selected(false)
+            @articles[article._id] = article
+            @articleKeys.push article._id
 
-      self
+          $('html, body').animate {scrollTop: 0}, {queue: false}
+
+      selectArticle: (key)=>
+        $('.accordion-body').hide()
+        $("##{key} .accordion-body").show()
+        @articles[key].selected(true)
+        @selectedArticle = key
+
+      onKeypress: (sender, event)->
+        switch event.keyCode
+          when 32
+            keys = @articleKeys()
+            if @selectedArticle
+              index = $.inArray(@selectedArticle, keys)
+              key = keys[index+1]
+            
+            if !key
+              key = keys[0]
+            @selectArticle(key)
+
+            $('html, body').animate(
+              {scrollTop: $("##{key}").offset().top - 60}
+              {queue: false}
+            )
+            return false
 
     feedReader = new FeedReader()
 
     @get "#/": ->
       feedReader.selectFeed(null)
-      $('html, body').animate {scrollTop: 0}, {queue: false}
+  
+    @get "#/feed/:feed": ->
+      feedReader.selectFeed(@params.feed)
 
-    @get "#/feed/:site": ->
-      feedReader.selectFeed(@params.site)
-      $('html, body').animate {scrollTop: 0}, {queue: false}
+    @get "#/feed/new/:url": ->
+      $.post '/feeds', {url:@params.url}, (feed, status)->
+        feedReader.user.feeds[feed._id] = feed
+        feedReader.user.feedKeys.push(feed._id)
+        feedReader.selectFeed(feed._id)
 
     $ ->
       $("#sidenav").affix()
-
-      $('html').keydown (e)->
-        if e.keyCode == 32
-          items = feedReader.items()
-          for item, i in items
-            if item.selected()
-              item.selected(false)
-              if i < items.length-1
-                items[i+1].selected(true)
-                target = $("##{items[i+1]._id}")
-                $('html, body').animate(
-                  {scrollTop: target.offset().top - 60}
-                  {queue: false}
-                )
-              return false
-
-          items[0].selected(true)
-          $('html, body').animate(
-            {scrollTop: $("##{items[0]._id}").offset().top - 60}
-            {queue: false}
-          )
-          return false
-
       ko.applyBindings(feedReader)
 
     @connect()

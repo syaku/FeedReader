@@ -6,7 +6,7 @@ request = require 'request'
   @utils.FeedUtils =
     get_articles: (site, callback)=>
       articles = []
-      request(site._id)
+      request(site.url)
         .pipe(new FeedParser())
         .on('error', (err)->
           callback(err)

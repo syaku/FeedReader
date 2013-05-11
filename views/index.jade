@@ -18,7 +18,12 @@ html
       body{
         font-family:'ヒラギノ角ゴ Pro W3','Hiragino Kaku Gothic Pro','メイリオ',Meiryo,'ＭＳ Ｐゴシック',sans-serif;
       }
-  body
+      a.feed{
+        text-overflow: ellipsis;
+        overflow:hidden;
+        white-space:nowrap;
+      }
+  body(data-bind="event:{keypress: onKeypress}")
     .navbar.navbar-fixed-top
       .navbar-inner
         .container
@@ -31,7 +36,7 @@ html
           #sidenav(data-bind="template: {name: user.displayName() ? 'side_menu' : 'side_menu_no_auth'}", style="width:270px;")
         .span9
           .content
-            .accordion#articles(data-bind="template:{name: 'article', foreach: items}") 
+            .accordion#articles(data-bind="template:{name: 'article', foreach: articleKeys}") 
 
     // Modal dialogs.
 
@@ -67,9 +72,9 @@ html
           li
             a(href="#/", target="_self") ホーム
           li.nav-header FEEDS
-          // ko foreach: user.feeds()
+          // ko foreach: user.feedKeys()
           li
-            a(data-toggle="context", data-bind="attr:{'data-target': '#context-menu'+$index(), href:'#/feed/'+encodeURIComponent(_id)}, text:title", target="_self", style="text-overflow: ellipsis;overflow:hidden;white-space:nowrap;")
+            a.feed(data-toggle="context", data-bind="attr:{'data-target': '#context-menu'+$index(), href:'#/feed/'+encodeURIComponent($data)}, text:$parent.user.feeds[$data].title", target="_self")
           // Context menu.
           div.feed-context-menu(data-bind="attr:{id:'context-menu'+$index()}")
             ul.dropdown-menu(role="menu")
@@ -78,13 +83,13 @@ html
           // /ko
 
     script#article(type="text/html")
-      .accordion-group(data-bind="attr:{id: _id}, style: {backgroundColor: read() ? '#eee' : 'white'}")
+      .accordion-group(data-bind="attr:{id: $data}, style: {backgroundColor: $parent.articles[$data].read() ? '#eee' : 'white'}")
         .accordion-heading
-          a.accordion-toggle(href="#", data-bind="click: $parent.selectArticle, text: meta.title + ' - ' + title")
-        .accordion-body.collapse.in(data-bind="if: selected()", style="background-color:white;")
+          a.accordion-toggle(href="#", data-bind="click: $parent.selectArticle, text: $parent.articles[$data].meta.title + ' - ' + $parent.articles[$data].title")
+        .accordion-body.collapse.in.hide(style="background-color:white;")
           .accordion-inner
             hgroup
               h4
-                a(data-bind="attr:{href: link}, text: title")
-              p(data-bind="text: date")
-            article(data-bind="html: description")
+                a(data-bind="attr:{href: $parent.articles[$data].link}, text: $parent.articles[$data].title")
+              p(data-bind="text: $parent.articles[$data].date")
+            article(data-bind="html: $parent.articles[$data].description")
